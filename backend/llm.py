@@ -1,7 +1,9 @@
 import os
+import json
 from openai import OpenAI
 from dotenv import load_dotenv
-import json
+from prompts import SYSTEM_PROMPT
+from parser import split_diff_by_file
 
 load_dotenv()
 
@@ -11,58 +13,42 @@ client = OpenAI(
 )
 
 
-SYSTEM_PROMPT = """
-You are a senior software engineer reviewing pull requests.
+def analyze_file_diff(file_diff: str):
 
-Analyze the given code diff and return ONLY valid JSON.
+    response = client.chat.completions.create(
+        model=os.getenv("LLM_MODEL"),
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": file_diff}
+        ],
+        temperature=0.2
+    )
 
-Do NOT include explanations outside JSON.
+    content = response.choices[0].message.content
+    content = content.replace("```json", "").replace("```", "")
 
-JSON format:
-
-{
-  "summary": "short explanation of what changed",
-  "risk_level": "LOW | MEDIUM | HIGH",
-  "issues": [
-    "list of potential bugs, risks, or problems"
-  ],
-  "suggestions": [
-    "list of improvements or best practices"
-  ]
-}
-
-Rules:
-- Be precise and technical
-- Focus on real bugs and risks
-- If uncertain, explain in issues instead of guessing
-"""
+    try:
+        return json.loads(content)
+    except Exception:
+        return {
+            "summary": "Failed to parse",
+            "risk_level": "UNKNOWN",
+            "issues": [],
+            "suggestions": []
+        }
 
 
 def review_pr(diff: str):
-    try:
-        response = client.chat.completions.create(
-            model=os.getenv("LLM_MODEL"),
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": diff}
-            ],
-            temperature=0
-        )
-        content = response.choices[0].message.content
-        content = content.replace("```json", "").replace("```", "")
 
-        print(content)
-        try:
-            return json.loads(content)
-        except Exception:
-            return {
-                "error": "Failed to parse JSON",
-                "raw_output": content
-            }
+    file_diffs = split_diff_by_file(diff)
 
-    except Exception as e:
-        return {
-            "error": str(e),
-            "fallback": "GROQ unavailable, using mock review",
-            "diff_length": len(diff)
-        }
+    results = []
+
+    for file_diff in file_diffs:
+        analysis = analyze_file_diff(file_diff)
+        results.append(analysis)
+
+    return {
+        "files_reviewed": len(results),
+        "reviews": results
+    }
