@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+.env/
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# FastAPI / uvicorn
+*.sqlite3
+
+# Jupyter
+.ipynb_checkpoints/
+
+# pytest
+.pytest_cache/
+
+# dotenv (IMPORTANT - protects your API keys)
+.env
