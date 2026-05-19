@@ -49,6 +49,8 @@ def review_pr(diff: str):
             temperature=0
         )
         content = response.choices[0].message.content
+        content = content.replace("```json", "").replace("```", "")
+
         print(content)
         try:
             return json.loads(content)
