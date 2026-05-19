@@ -4,6 +4,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from prompts import SYSTEM_PROMPT
 from parser import split_diff_by_file
+from risk import compute_overall_risk, detect_sensitive_files
 
 load_dotenv()
 
@@ -46,9 +47,15 @@ def review_pr(diff: str):
 
     for file_diff in file_diffs:
         analysis = analyze_file_diff(file_diff)
+        sensitive_matches = detect_sensitive_files(file_diff)
+        analysis["sensitive_areas"] = sensitive_matches
+
         results.append(analysis)
 
+    overall_risk = compute_overall_risk(results)
+
     return {
+        "overall_risk": overall_risk,
         "files_reviewed": len(results),
         "reviews": results
     }
