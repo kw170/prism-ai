@@ -22,9 +22,6 @@ def generate_engineering_report(diff: str, logs: str = None):
 
     # 3. CI debugging (optional)
     ci_analysis = None
-    print("HERE")
-    print(logs)
-    print("HERE")
     if logs:
         ci_analysis = analyze_failure_logs(logs)
 
