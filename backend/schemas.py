@@ -5,3 +5,7 @@ class PRRequest(BaseModel):
 
 class LogRequest(BaseModel):
     logs: str
+
+class ReportRequest(BaseModel):
+    pr_url: str
+    logs: str = None
